@@ -43,38 +43,36 @@ class Miner(BaseMinerNeuron):
 
         # TODO(developer): Anything specific to your use case you can do here
 
-    import time  # Ensure this is at the top
+    async def forward(
+        self, synapse: sybil.protocol.Challenge
+    ) -> sybil.protocol.Challenge:
+        """
+        Processes the incoming 'Challenge' synapse by performing a predefined operation on the input data.
+        This method should be replaced with actual logic relevant to the miner's purpose.
 
-async def forward(
-    self, synapse: sybil.protocol.Challenge
-) -> sybil.protocol.Challenge:
-    bt.logging.info(f"Received challenge: {synapse.challenge_url}")
-    
-    challenge_url = synapse.challenge_url
+        Args:
+            synapse (sybil.protocol.Challenge): The synapse object containing the 'challenge_url' data.
+        """
+        
+        bt.logging.info(f"Received challenge: {synapse.challenge_url}")
+        
+        challenge_url = synapse.challenge_url
 
-    try:
-        request_start = time.perf_counter()  # Start timing
-
-        async with aiohttp.ClientSession() as session:
-            bt.logging.info(f"Sending challenge to {self.miner_server}/challenge")
-
-            async with session.post(
-                f"{self.miner_server}/challenge",
-                json={"url": challenge_url},
-                headers={"Content-Type": "application/json"},
-            ) as response:
-                duration = time.perf_counter() - request_start  # End timing
-                bt.logging.info(f"Challenge solved in {duration:.3f} seconds")
-
-                response = (await response.json())["response"]
-                synapse.challenge_response = response
-                bt.logging.info(f"Solved challenge: {synapse.challenge_response}")
-                return synapse
-
-    except Exception as e:
-        bt.logging.error(f"Error solving challenge: {e}")
-        return synapse
-
+        try:
+            async with aiohttp.ClientSession() as session:
+                bt.logging.info(f"Sending challenge to {self.miner_server}/challenge")
+                async with session.post(
+                    f"{self.miner_server}/challenge",
+                    json={"url": challenge_url},
+                    headers={"Content-Type": "application/json"},
+                ) as response:
+                    response = (await response.json())["response"]
+                    synapse.challenge_response = response
+                    bt.logging.info(f"Solved challenge: {synapse.challenge_response}")
+                    return synapse
+        except Exception as e:
+            bt.logging.error(f"Error solving challenge: {e}")
+            return synapse
 
     async def blacklist(
         self, synapse: sybil.protocol.Challenge
